@@ -11,44 +11,51 @@ import RealityKitContent
 
 struct ContentView: View {
 
-    @State private var showImmersiveSpace = false
-    @State private var immersiveSpaceIsShown = false
-
+    // we passed appState to ContentView in BallApp
+    // we are able to pull it out of the Environment
+    // macro by passing a type in
+    @Environment(AppState.self) private var appState
     @Environment(\.openImmersiveSpace) var openImmersiveSpace
-    @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
+
     
     @State var immersiveSpaceId: String
+    
+    
+    // our function for resetting the ball position
+    // we grab both the position of the ball and
+    // the ball entity from appState. If they are
+    // both not nil, we set the ball entity
+    // to its initial position which we capture in
+    // the ImmersiveView view
+    func ResetBall(){
+        if let position = appState.initialPosition {
+            if let ball = appState.ballEntity {
+                ball.transform.translation = position
+            }
+        }
+    }
+    
 
     var body: some View {
         VStack {
 
             Text("Hello, world!")
+            // nothing complicated
+            // Immersive View button calls the built-in
+            // Environment function openImmersiveSpace
+            Button("Immersive View"){
+                Task{
+                    await openImmersiveSpace(id: immersiveSpaceId)
+                }
+            }
+            // and here the ResetBall button
+            // action calls our custom ResetBall func
+            Button("Reset Ball"){
+                ResetBall()
+            }
 
         }
         .padding()
-        .onAppear(){
-            Task {
-                await openImmersiveSpace(id: immersiveSpaceId)
-        }
-        }
-        .onChange(of: showImmersiveSpace) { _, newValue in
-            Task {
-                if newValue {
-                    switch await openImmersiveSpace(id: "ImmersiveSpace") {
-                    case .opened:
-                        immersiveSpaceIsShown = true
-                    case .error, .userCancelled:
-                        fallthrough
-                    @unknown default:
-                        immersiveSpaceIsShown = false
-                        showImmersiveSpace = false
-                    }
-                } else if immersiveSpaceIsShown {
-                    await dismissImmersiveSpace()
-                    immersiveSpaceIsShown = false
-                }
-            }
-        }
     }
 }
 
